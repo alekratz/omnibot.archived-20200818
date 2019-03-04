@@ -96,7 +96,7 @@ class Wordbot(Module):
         Otherwise, the line is stripped, scanned, and checked for winning words.
         """
         parts = text.split()
-        if who is None:
+        if who is None or who in self.args['ignore']:
             return
         elif channel not in self._games:
             return
@@ -129,6 +129,7 @@ class Wordbot(Module):
             'words_per_hour': 50,
             'hours_per_round': 5,
             'wordlist_path': str(default_base_dir() / 'words.txt'),
+            'ignore': [],
         }
 
     def _ensure_database(self):
