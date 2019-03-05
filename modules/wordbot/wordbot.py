@@ -6,7 +6,7 @@ import random
 import sqlite3
 from string import punctuation
 import time
-from typing import Mapping, Optional, Sequence
+from typing import Mapping, Optional, Sequence, Tuple
 from omnibot import Module
 from .game import Game
 
@@ -96,6 +96,7 @@ class Wordbot(Module):
         Otherwise, the line is stripped, scanned, and checked for winning words.
         """
         parts = text.split()
+        log.debug("Got command with parts %s", parts)
         if who is None or who in self.args['ignore']:
             return
         elif channel not in self._games:
@@ -120,7 +121,17 @@ class Wordbot(Module):
                 self.server.send_message(channel, "{}: Congrats! '{}' is good for 1 point.".format(who, word))
 
     async def on_command(self, command: str, channel: Optional[str], who: Optional[str], text: str):
-        pass
+        parts = text.split()
+        if len(parts) == 1:
+            return
+        if parts[1] == 'leaderboard':
+            leaders = self.leaderboard(channel)
+            log.debug("%s", leaders)
+            lines = []
+            for i, (name, score) in enumerate(leaders[:5]):
+                lines += ["{}. {}. {}".format(i + 1, name, score)]
+            for line in lines:
+                self.server.send_message(channel, line)
 
     @staticmethod
     def default_args():
@@ -223,3 +234,25 @@ class Wordbot(Module):
         """
         samples = int(self.args['words_per_hour'] * self.args['hours_per_round'])
         return random.sample(self._words, samples)
+
+    def leaderboard(self, channel, since = None) -> Sequence[Tuple[str, int]]:
+        """
+        Gets a leaderboard for the given channel, optionally since a given timestamp.
+        """
+        if since is None:
+            since = 0
+        with self._db() as conn:
+            cur = conn.cursor()
+            cur.execute("""
+                        SELECT user, COUNT(*) AS total
+                        FROM score
+                        JOIN game ON game.id = score.game
+                        WHERE
+                            game.start > :start
+                        AND game.channel = :channel
+                        GROUP BY user
+                        ORDER BY total DESC
+                        """, {'start': since, 'channel': channel})
+            scores = list(cur.fetchall())
+            cur.close()
+        return scores
