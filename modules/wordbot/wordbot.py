@@ -96,7 +96,6 @@ class Wordbot(Module):
         Otherwise, the line is stripped, scanned, and checked for winning words.
         """
         parts = text.split()
-        log.debug("Got command with parts %s", parts)
         if who is None or who in self.args['ignore']:
             return
         elif channel not in self._games:
@@ -126,7 +125,6 @@ class Wordbot(Module):
             return
         if parts[1] == 'leaderboard':
             leaders = self.leaderboard(channel)
-            log.debug("%s", leaders)
             lines = []
             for i, (name, score) in enumerate(leaders[:5]):
                 lines += ["{}. {}. {}".format(i + 1, name, score)]
