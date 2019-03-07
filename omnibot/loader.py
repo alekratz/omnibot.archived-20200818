@@ -1,6 +1,7 @@
 import importlib
 import importlib.util as importutil
 import logging
+import gc
 from pathlib import Path
 from typing import Optional, Sequence
 from .module import Module
@@ -45,6 +46,7 @@ class ModuleLoader:
 
         If the module is already loaded then it is returned.
         """
+        importlib.invalidate_caches()
         if name in self._loaded_modules:
             return self._loaded_modules[name]
 
@@ -74,6 +76,8 @@ class ModuleLoader:
         """
         Unloads a module with the given name, if it has been added by this loader.
         """
-        log.debug("Unloading module %s", name)
         self._loaded_modules.pop(name, None)
+        log.debug("Running garbage collector")
+        # collect generation 0 objects, including the module
+        gc.collect(0)
 
