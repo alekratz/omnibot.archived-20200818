@@ -1,8 +1,8 @@
 import os
-import pytest
 import sqlite3
 import time
-from modules.wordbot import wordbot, game
+import pytest
+from modules import wordbot
 
 
 @pytest.fixture
@@ -13,11 +13,11 @@ def db():
 
 def test_wordbot_game(db):
     now = time.time()
-    game_save = game.Game(channel="#test", start=now, end=now + 30, words=['a', 'b', 'c'])
+    game_save = wordbot.Game(channel="#test", start=now, end=now + 30, words=['a', 'b', 'c'])
     game_save.save(db)
     assert game_save.id is not None
 
-    game_restore = game.Game.restore(db, "#test")
+    game_restore = wordbot.Game.restore(db, "#test")
     assert game_restore.id == game_save.id
     assert game_restore.channel == game_save.channel
     assert game_restore.start == game_save.start
@@ -26,7 +26,7 @@ def test_wordbot_game(db):
 
 def test_wordbot_score(db):
     now = time.time()
-    game_save = game.Game(channel="#test", start=now, end=now + 30, words=['a', 'b', 'c'])
+    game_save = wordbot.Game(channel="#test", start=now, end=now + 30, words=['a', 'b', 'c'])
     game_save.save(db)
     assert game_save.id is not None
 
@@ -35,7 +35,7 @@ def test_wordbot_score(db):
     assert len(game_save.words) == 2
     assert 'a' not in game_save.words
 
-    game_restore = game.Game.restore(db, "#test")
+    game_restore = wordbot.Game.restore(db, "#test")
     assert 'a' not in game_save.words
     assert len(game_restore.words) == 2
     scoreboard = game_restore.scoreboard(db)

@@ -1,3 +1,4 @@
-from . import wordbot, game
+from .wordbot import *
+from .game import *
 
-ModuleClass = wordbot.Wordbot
+ModuleClass = Wordbot

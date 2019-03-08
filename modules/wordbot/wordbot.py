@@ -240,8 +240,7 @@ class Wordbot(Module):
         if since is None:
             since = 0
         with self._db() as conn:
-            cur = conn.cursor()
-            cur.execute("""
+            cur = conn.execute("""
                         SELECT user, COUNT(*) AS total
                         FROM score
                         JOIN game ON game.id = score.game
