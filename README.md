@@ -23,6 +23,5 @@ aforementioned issues page.
 * Install instructions
 * Development documentation
 * More bots
-    * Wordbot
     * Markov bot
-    * Acro
+    * Acro bot
