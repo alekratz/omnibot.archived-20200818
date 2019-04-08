@@ -14,14 +14,18 @@ There are a few TODOs that I have queued in my head. Feel free to suggest featur
 aforementioned issues page.
 
 * More shortcuts to do common things (e.g. required config for modules)
+* Data directory for modules, specified in config
 * Expand past IRC and support other chat platforms
     * Discord
     * Slack
     * Zulip
+    * Gitter?
+    * Google Chat?
     * anything else?
 * Example config
 * Install instructions
 * Development documentation
 * More bots
     * Markov bot
+        * In-progress
     * Acro bot
