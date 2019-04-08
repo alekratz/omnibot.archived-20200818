@@ -4,6 +4,10 @@ from omnibot import Module, ModuleError, Server
 log = logging.getLogger(__name__)
 
 class Nickserv(Module):
+    default_args = {
+        'nickserv': 'NickServ',
+    }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -26,12 +30,6 @@ class Nickserv(Module):
         return bool(msg.prefix) \
                 and bool(msg.prefix.nick) \
                 and msg.prefix.nick.lower() == self.args['nickserv'].lower()
-
-    @staticmethod
-    def default_args():
-        return {
-            'nickserv': 'NickServ',
-        }
 
     def login(self):
         self.server.send_message(self.args['nickserv'],

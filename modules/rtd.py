@@ -8,12 +8,10 @@ rtd_re = re.compile(r'(\d+)?d(\d+)')
 
 @module_commands('!rtd', '!d20')
 class Rtd(Module):
-    @staticmethod
-    def default_args():
-        return {
-            'max_sides': 100,
-            'max_dice': 100,
-        }
+    default_args = {
+        'max_sides': 100,
+        'max_dice': 100,
+    }
 
     async def on_command(self, cmd, channel, who, text):
         parts = text.split()

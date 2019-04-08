@@ -22,6 +22,10 @@ fortunes = [
 
 @module_commands('!fortune')
 class Fortune(Module):
+    default_args = {
+        'timeout': 300,
+    }
+
     async def on_load(self):
         self.timeouts = {}
 
@@ -38,12 +42,6 @@ class Fortune(Module):
         self.timeouts[channel][who] = now
         chosen = random.choice(fortunes)
         self.server.send_message(channel, "{}: {}".format(who, chosen))
-
-    @staticmethod
-    def default_args():
-        return {
-            'timeout': 300,
-        }
 
 
 ModuleClass = Fortune

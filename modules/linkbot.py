@@ -46,6 +46,12 @@ class HTMLTitleParser(HTMLParser):
 
 
 class Linkbot(Module):
+    default_args = {
+        'blacklist': [],
+        'max_urls': 1,
+        'follow_local_urls': False,
+    }
+
     async def on_message(self, channel, who, text):
         global url_re
         if not channel or not who:
@@ -128,14 +134,6 @@ class Linkbot(Module):
         else:
             # good URL
             return True
-
-    @staticmethod
-    def default_args():
-        return {
-            'blacklist': [],
-            'max_urls': 1,
-            'follow_local_urls': False,
-        }
 
 
 # TODO

@@ -54,6 +54,14 @@ def default_base_dir():
 
 
 class Wordbot(Module):
+    default_args = {
+        "database_path": str(default_base_dir() / "wordbot.db"),
+        "words_per_hour": 50,
+        "hours_per_round": 5,
+        "wordlist_path": str(default_base_dir() / "words.txt"),
+        "ignore": [],
+    }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._games = {}
@@ -64,7 +72,7 @@ class Wordbot(Module):
         Ensures the current database state and recreates the current state if necessary.
         """
         self._ensure_database()
-        with open(self.args['wordlist_path']) as fp:
+        with open(self.args["wordlist_path"]) as fp:
             self._words = set(map(str.strip, fp))
         log.info("loaded %s words", len(self._words))
 
@@ -96,20 +104,22 @@ class Wordbot(Module):
         Otherwise, the line is stripped, scanned, and checked for winning words.
         """
         parts = text.split()
-        if who is None or who in self.args['ignore']:
+        if who is None or who in self.args["ignore"]:
             return
         elif channel not in self._games:
             return
         elif len(parts) == 0:
             return
-        elif parts[0] == '!wordbot':
+        elif parts[0] == "!wordbot":
             await self.on_command(parts[0], channel, who, text)
-        elif parts[0][0] == '!' or channel is None:
+        elif parts[0][0] == "!" or channel is None:
             # attempt to ignore other commands and definitely ignore private messages
             return
         else:
             game = self._games[channel]
-            parts = set(filter(len, [word.strip(punctuation).lower() for word in parts]))
+            parts = set(
+                filter(len, [word.strip(punctuation).lower() for word in parts])
+            )
             matches = parts & game.words
             if not matches:
                 return
@@ -117,13 +127,17 @@ class Wordbot(Module):
                 for word in matches:
                     game.score(db, word, who, text)
             for word in matches:
-                self.server.send_message(channel, "{}: Congrats! '{}' is good for 1 point.".format(who, word))
+                self.server.send_message(
+                    channel, "{}: Congrats! '{}' is good for 1 point.".format(who, word)
+                )
 
-    async def on_command(self, command: str, channel: Optional[str], who: Optional[str], text: str):
+    async def on_command(
+        self, command: str, channel: Optional[str], who: Optional[str], text: str
+    ):
         parts = text.split()
         if len(parts) == 1:
             return
-        if parts[1] == 'leaderboard':
+        if parts[1] == "leaderboard":
             leaders = self.leaderboard(channel)
             lines = []
             for i, (name, score) in enumerate(leaders[:5]):
@@ -131,21 +145,11 @@ class Wordbot(Module):
             for line in lines:
                 self.server.send_message(channel, line)
 
-    @staticmethod
-    def default_args():
-        return {
-            'database_path': str(default_base_dir() / 'wordbot.db'),
-            'words_per_hour': 50,
-            'hours_per_round': 5,
-            'wordlist_path': str(default_base_dir() / 'words.txt'),
-            'ignore': [],
-        }
-
     def _ensure_database(self):
         """
         Ensures that the database exists and the tables also exist.
         """
-        log.debug("Ensuring wordbot database (%s)", self.args['database_path'])
+        log.debug("Ensuring wordbot database (%s)", self.args["database_path"])
         with self._db() as conn:
             conn.executescript(SQL)
 
@@ -153,7 +157,7 @@ class Wordbot(Module):
         """
         Creates a database connection.
         """
-        return sqlite3.connect(self.args['database_path'])
+        return sqlite3.connect(self.args["database_path"])
 
     def restore_game(self, channel: str):
         """
@@ -166,7 +170,7 @@ class Wordbot(Module):
             with self._db() as conn:
                 game = Game.restore(conn, channel)
             if game is None:
-                # create a new game 
+                # create a new game
                 self.new_game(channel)
             else:
                 now = time.time()
@@ -184,21 +188,23 @@ class Wordbot(Module):
         This does not save the game after it's been created.
         """
         start = int(time.time())
-        duration = self.args['hours_per_round'] * 3600.0
+        duration = self.args["hours_per_round"] * 3600.0
         end = int(start + duration)
         words = self.choose_words()
-        #log.debug("Chose these words: %s", words)
+        # log.debug("Chose these words: %s", words)
         return Game(channel=channel, start=start, end=end, words=words)
 
     def end_game(self, channel: str):
         """
         Ends a game for a channel, announces winners, and creates a new one.
         """
-        lines = ['Game over. Here were the scores:']
+        lines = ["Game over. Here were the scores:"]
 
         score_key = operator.itemgetter(1)
-        score_groups = itertools.groupby(sorted(self.scoreboard(channel).items(), key=score_key, reverse=True),
-                                         key=score_key)
+        score_groups = itertools.groupby(
+            sorted(self.scoreboard(channel).items(), key=score_key, reverse=True),
+            key=score_key,
+        )
         for place, (points, group) in enumerate(score_groups, 1):
             if points > 0:
                 for name, _ in group:
@@ -230,17 +236,18 @@ class Wordbot(Module):
         """
         Chooses a random set of words.
         """
-        samples = int(self.args['words_per_hour'] * self.args['hours_per_round'])
+        samples = int(self.args["words_per_hour"] * self.args["hours_per_round"])
         return random.sample(self._words, samples)
 
-    def leaderboard(self, channel, since = None) -> Sequence[Tuple[str, int]]:
+    def leaderboard(self, channel, since=None) -> Sequence[Tuple[str, int]]:
         """
         Gets a leaderboard for the given channel, optionally since a given timestamp.
         """
         if since is None:
             since = 0
         with self._db() as conn:
-            cur = conn.execute("""
+            cur = conn.execute(
+                """
                         SELECT user, COUNT(*) AS total
                         FROM score
                         JOIN game ON game.id = score.game
@@ -249,7 +256,9 @@ class Wordbot(Module):
                         AND game.channel = :channel
                         GROUP BY user
                         ORDER BY total DESC
-                        """, {'start': since, 'channel': channel})
+                        """,
+                {"start": since, "channel": channel},
+            )
             scores = list(cur.fetchall())
             cur.close()
         return scores

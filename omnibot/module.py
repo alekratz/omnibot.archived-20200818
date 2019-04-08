@@ -13,6 +13,8 @@ class Module:
     A pluggable module for a bot.
     """
 
+    default_args = {}
+
     def __init__(
         self, config: "ModuleConfig", server: "Server", commands: Sequence[str] = None
     ) -> None:
@@ -20,7 +22,7 @@ class Module:
         self.__server = server
         self.__commands = commands or []
         clazz = self.__class__
-        self.__args = ChainMap(self.__config.args, clazz.default_args())
+        self.__args = ChainMap(self.__config.args, clazz.default_args)
 
     @property
     def name(self) -> str:
@@ -114,13 +116,6 @@ class Module:
             and msg.command == "PRIVMSG"
             and msg.parameters[0] in self.config.channels
         )
-
-    @staticmethod
-    def default_args():
-        """
-        A list of all default arguments.
-        """
-        return {}
 
 
 def module_commands(*commands):
