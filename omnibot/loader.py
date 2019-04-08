@@ -29,8 +29,8 @@ class ModuleLoader:
         return self._search_paths
 
     def find_module(self, name: str) -> Optional[Path]:
-        init = Path(name) / '__init__.py'
-        name = name + '.py'
+        init = Path(name) / "__init__.py"
+        name = name + ".py"
         for path_dir in self.search_paths:
             path = path_dir / name
             initpath = path_dir / init
@@ -53,8 +53,8 @@ class ModuleLoader:
         path = self.find_module(name)
         if path is None:
             raise InvalidModuleException(name, "module not found")
-        if str(path).endswith('.py'):
-            module_name = str(path)[:-3].replace('/', '.')
+        if str(path).endswith(".py"):
+            module_name = str(path)[:-3].replace("/", ".")
         log.debug("Loading module %s from path %s", name, path)
         spec = importutil.spec_from_file_location(module_name, path)
         module = importutil.module_from_spec(spec)
@@ -63,11 +63,14 @@ class ModuleLoader:
         except Exception as ex:
             log.exception("Could not execute module")
             raise InvalidModuleException(name, str(ex))
-        if not hasattr(module, 'ModuleClass'):
-            raise InvalidModuleException(name, 'ModuleClass type must be defined by this module')
+        if not hasattr(module, "ModuleClass"):
+            raise InvalidModuleException(
+                name, "ModuleClass type must be defined by this module"
+            )
         elif not issubclass(module.ModuleClass, Module):
-            raise InvalidModuleException(name, 'ModuleClass type must be an instance of ' \
-                                               'omnibot.module.Module')
+            raise InvalidModuleException(
+                name, "ModuleClass type must be an instance of " "omnibot.module.Module"
+            )
         self._loaded_modules[name] = module.ModuleClass
         log.info("Loaded module %s", name)
         return self._loaded_modules[name]
@@ -80,4 +83,3 @@ class ModuleLoader:
         log.debug("Running garbage collector")
         # collect generation 0 objects, including the module
         gc.collect(0)
-

@@ -14,8 +14,13 @@ class InvalidConfigError(Exception):
 
 
 class ModuleConfig:
-    def __init__(self, name: str, channels: Sequence[str] = None, args: Mapping[str, Any] = None,
-                 always_reload: bool = None):
+    def __init__(
+        self,
+        name: str,
+        channels: Sequence[str] = None,
+        args: Mapping[str, Any] = None,
+        always_reload: bool = None,
+    ):
         self._name = name
         self._channels = set(channels or [])
         self._args = args or {}
@@ -40,19 +45,30 @@ class ModuleConfig:
     def __getitem__(self, key: str) -> Any:
         return self.args[key]
 
-    def __eq__(self, other: 'ModuleConfig') -> bool:
-        return isinstance(other, ModuleConfig) and self.name == other.name \
-                and self.channels == other.channels \
-                and self.always_reload == other.always_reload \
-                and self.args == other.args
+    def __eq__(self, other: "ModuleConfig") -> bool:
+        return (
+            isinstance(other, ModuleConfig)
+            and self.name == other.name
+            and self.channels == other.channels
+            and self.always_reload == other.always_reload
+            and self.args == other.args
+        )
 
     def __hash__(self) -> int:
         return hash(self.name)
 
 
 class ServerConfig:
-    def __init__(self, *, addr: str, nick: str, port: int = None, ssl: bool = None,
-                 modules: Mapping[str, Any] = None, **kwargs):
+    def __init__(
+        self,
+        *,
+        addr: str,
+        nick: str,
+        port: int = None,
+        ssl: bool = None,
+        modules: Mapping[str, Any] = None,
+        **kwargs
+    ):
         self._addr = addr
         self._ssl = ssl or False
         if port is None:
@@ -87,10 +103,14 @@ class ServerConfig:
     def modules(self) -> Mapping[str, ModuleConfig]:
         return self._modules
 
-    def __eq__(self, other: 'ServerConfig') -> bool:
-        return isinstance(other, ServerConfig) and self.addr == other.addr \
-                and self.port == other.port and self.ssl == other.ssl \
-                and self.modules == other.modules
+    def __eq__(self, other: "ServerConfig") -> bool:
+        return (
+            isinstance(other, ServerConfig)
+            and self.addr == other.addr
+            and self.port == other.port
+            and self.ssl == other.ssl
+            and self.modules == other.modules
+        )
 
     def __hash__(self) -> int:
         return hash((self.addr, self.port, self.ssl, list(self.modules.keys())))
@@ -100,4 +120,4 @@ def config_from_yaml(text: str):
     obj = yaml.load(text)
     if not obj:
         return []
-    return [ServerConfig(**c) for c in obj['servers']]
+    return [ServerConfig(**c) for c in obj["servers"]]

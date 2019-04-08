@@ -13,14 +13,17 @@ log = logging.getLogger(__name__)
 
 
 class Server:
-    def __init__(self, loader: ModuleLoader, config: ServerConfig, loop = None) -> None:
+    def __init__(self, loader: ModuleLoader, config: ServerConfig, loop=None) -> None:
         self._config = config
         self._modules = {}
         self._loader = loader
         self._loop = loop or asyncio.get_event_loop()
-        self._conn = IrcProtocol([IrcServer(config.addr, config.port, config.ssl)],
-                                 config.nick, loop = self._loop)
-        self._conn.register('*', self.on_server_message)
+        self._conn = IrcProtocol(
+            [IrcServer(config.addr, config.port, config.ssl)],
+            config.nick,
+            loop=self._loop,
+        )
+        self._conn.register("*", self.on_server_message)
         self._active_channels = set()
         self._connected = False
 
@@ -56,10 +59,11 @@ class Server:
         """
         Reloads a server based on a new configuration.
         """
-        assert self.config.addr == config.addr \
-                and self.config.port == config.port \
-                and self.config.ssl == config.ssl, \
-                "changing a connection must be done through the server manager"
+        assert (
+            self.config.addr == config.addr
+            and self.config.port == config.port
+            and self.config.ssl == config.ssl
+        ), "changing a connection must be done through the server manager"
         self._config = config
         await self.reload_modules()
 
@@ -70,7 +74,10 @@ class Server:
         unload = []
         for module in self._modules.values():
             if module.name in self.config.modules:
-                if module.config != self.config.modules[module.name] or module.config.always_reload:
+                if (
+                    module.config != self.config.modules[module.name]
+                    or module.config.always_reload
+                ):
                     log.debug("Scheduling %s for reload", module.name)
                     unload += [module.name]
             else:
@@ -115,7 +122,9 @@ class Server:
         await asyncio.gather(*unloaded)
 
     def match_channels(self):
-        need = {chan for module in self._modules.values() for chan in module.config.channels}
+        need = {
+            chan for module in self._modules.values() for chan in module.config.channels
+        }
         to_join = need - self._active_channels
         to_leave = self._active_channels - need
         for chan in to_join:
@@ -127,15 +136,15 @@ class Server:
         """
         Callback that is called whenever a message is received.
         """
-        #log.debug("%s", msg)
-        if msg.command == '001':
+        # log.debug("%s", msg)
+        if msg.command == "001":
             self._connected = True
             await self.on_connect()
-        elif msg.command == 'KICK':
+        elif msg.command == "KICK":
             await self.on_kick(msg)
-        elif msg.command == 'PART':
+        elif msg.command == "PART":
             await self.on_part(msg)
-        elif msg.command == 'JOIN':
+        elif msg.command == "JOIN":
             await self.on_join(msg)
         else:
             await self.on_message(msg)
@@ -146,7 +155,7 @@ class Server:
         """
         self.match_channels()
         futures = [module.on_connect() for module in self._modules.values()]
-        await asyncio.gather(*futures, loop = self.loop)
+        await asyncio.gather(*futures, loop=self.loop)
 
     async def on_kick(self, msg):
         """
@@ -159,7 +168,7 @@ class Server:
             self._active_channels.remove(channel)
         futures = [module.on_kick(channel, who) for module in self._modules.values()]
         try:
-            await asyncio.gather(*futures, loop = self.loop)
+            await asyncio.gather(*futures, loop=self.loop)
         except:
             log.exception("Error while handling kick callback")
 
@@ -177,7 +186,7 @@ class Server:
             self._active_channels.remove(channel)
         futures = [module.on_part(channel, who) for module in self._modules.values()]
         try:
-            await asyncio.gather(*futures, loop = self.loop)
+            await asyncio.gather(*futures, loop=self.loop)
         except:
             log.exception("Error while handling part callback")
 
@@ -195,7 +204,7 @@ class Server:
             self._active_channels.add(channel)
         futures = [module.on_join(channel, who) for module in self._modules.values()]
         try:
-            await asyncio.gather(*futures, loop = self.loop)
+            await asyncio.gather(*futures, loop=self.loop)
         except:
             log.exception("Error while handling join callback")
 
@@ -213,10 +222,13 @@ class Server:
         who = msg.prefix.nick
         if who == self.config.nick:
             who = None
-        text = ' '.join(msg.parameters[1:])
-        futures = [module.on_message(channel, who, text)
-                   for module in self._modules.values() if module.should_handle(msg)]
-        await asyncio.gather(*futures, loop = self.loop)
+        text = " ".join(msg.parameters[1:])
+        futures = [
+            module.on_message(channel, who, text)
+            for module in self._modules.values()
+            if module.should_handle(msg)
+        ]
+        await asyncio.gather(*futures, loop=self.loop)
 
     def send_message(self, target: str, message: str) -> None:
         """
@@ -226,12 +238,13 @@ class Server:
 
 
 class ServerManager:
-    def __init__(self, server_configs: Sequence[ServerConfig], loop = None) -> None:
+    def __init__(self, server_configs: Sequence[ServerConfig], loop=None) -> None:
         self._loop = loop or asyncio.get_event_loop()
         # set up all servers from their configs
         self._server_configs = {s.addr: s for s in server_configs}
         self._servers = {
-            addr: Server(ModuleLoader(['modules']), cfg) for addr, cfg in self._server_configs.items()
+            addr: Server(ModuleLoader(["modules"]), cfg)
+            for addr, cfg in self._server_configs.items()
         }
         self._servers_lock = asyncio.Lock()
         self._active = {}
@@ -256,11 +269,13 @@ class ServerManager:
                 server = self._servers[addr]
                 futures += [connect_one(server)]
             for addr, server in self._reconnect_servers.items():
-                assert addr not in self._active, "attempting to reconnect to an active server"
+                assert (
+                    addr not in self._active
+                ), "attempting to reconnect to an active server"
                 self._servers[addr] = server
                 futures += [connect_one(server)]
             self._reconnect_servers.clear()
-        await asyncio.gather(*futures, loop = self._loop)
+        await asyncio.gather(*futures, loop=self._loop)
 
     async def _disconnect(self):
         """
@@ -275,7 +290,7 @@ class ServerManager:
                 server = self._active.pop(addr)
             futures += [server.close_future]
             server.disconnect()
-        await asyncio.gather(*futures, loop = self._loop)
+        await asyncio.gather(*futures, loop=self._loop)
 
     async def _server_futures(self):
         async with self._servers_lock:
@@ -286,7 +301,9 @@ class ServerManager:
             await self._disconnect()
             await self._connect()
             futures = await self._server_futures() + [self._reload_signal.wait()]
-            await asyncio.wait(futures, loop = self._loop, return_when = asyncio.FIRST_COMPLETED)
+            await asyncio.wait(
+                futures, loop=self._loop, return_when=asyncio.FIRST_COMPLETED
+            )
             self._reload_signal.clear()
 
     async def reload(self, server_configs: Sequence[ServerConfig]):
@@ -296,12 +313,14 @@ class ServerManager:
         async with self._servers_lock:
             current = set(self._server_configs.keys())
             new = set(server_configs.keys())
-            added =  new - current
+            added = new - current
             removed = current - new
             changed = current & new
             for addr in added:
                 log.debug("Added server %s", addr)
-                self._servers[addr] = Server(ModuleLoader(['modules']), server_configs[addr])
+                self._servers[addr] = Server(
+                    ModuleLoader(["modules"]), server_configs[addr]
+                )
             for addr in removed:
                 log.debug("Removed server %s", addr)
                 self._servers.pop(addr)
@@ -309,14 +328,20 @@ class ServerManager:
                 prev = self._server_configs[addr]
                 newest = server_configs[addr]
                 # check if connection settings changed, and make a new connection if so
-                if (prev.addr, prev.port, prev.ssl) != (newest.addr, newest.port, newest.ssl):
+                if (prev.addr, prev.port, prev.ssl) != (
+                    newest.addr,
+                    newest.port,
+                    newest.ssl,
+                ):
                     log.debug("Reconnecting to server %s", newest.addr)
                     self._servers.pop(prev.addr)
-                    self._reconnect_servers[newest.addr] = Server(ModuleLoader(['modules']), newest)
+                    self._reconnect_servers[newest.addr] = Server(
+                        ModuleLoader(["modules"]), newest
+                    )
                 else:
                     log.debug("Reconfiguring server %s", newest.addr)
                     reload_futures += [self._servers[addr].reload(server_configs[addr])]
-            await asyncio.gather(*reload_futures, loop = self._loop)
+            await asyncio.gather(*reload_futures, loop=self._loop)
             self._server_configs = server_configs
         self._reload_signal.set()
         log.info("Finished reloading server configurations")

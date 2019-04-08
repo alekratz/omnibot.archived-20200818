@@ -13,7 +13,7 @@ def __reload_config(loop, filename: str, manager: ServerManager):
         with open(filename) as fp:
             contents = fp.read()
         coro = manager.reload(config_from_yaml(contents))
-        asyncio.ensure_future(coro, loop = loop)
+        asyncio.ensure_future(coro, loop=loop)
     except Exception:
         logging.exception("Could not reload configuration")
 
@@ -22,7 +22,7 @@ async def __main(loop, args):
     logging.basicConfig(level=logging.DEBUG)
     with open(args.config) as fp:
         config = config_from_yaml(fp.read())
-    manager = ServerManager(config, loop = loop)
+    manager = ServerManager(config, loop=loop)
 
     loop.add_signal_handler(signal.SIGUSR1, __reload_config, loop, args.config, manager)
 
@@ -30,8 +30,8 @@ async def __main(loop, args):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description = "Run an IRC bot")
-    parser.add_argument("-c", "--config", metavar='CONFIG', default='omnibot.yml')
+    parser = argparse.ArgumentParser(description="Run an IRC bot")
+    parser.add_argument("-c", "--config", metavar="CONFIG", default="omnibot.yml")
     return parser.parse_args()
 
 

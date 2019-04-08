@@ -12,8 +12,10 @@ class Module:
     """
     A pluggable module for a bot.
     """
-    def __init__(self, config: 'ModuleConfig', server: 'Server',
-                 commands: Sequence[str] = None) -> None:
+
+    def __init__(
+        self, config: "ModuleConfig", server: "Server", commands: Sequence[str] = None
+    ) -> None:
         self.__config = config
         self.__server = server
         self.__commands = commands or []
@@ -26,7 +28,7 @@ class Module:
         return self.config.name
 
     @property
-    def config(self) -> 'ModuleConfig':
+    def config(self) -> "ModuleConfig":
         "The configuration supplied to this module."
         return self.__config
 
@@ -35,7 +37,7 @@ class Module:
         return self.__args
 
     @property
-    def server(self) -> 'Server':
+    def server(self) -> "Server":
         return self.__server
 
     @property
@@ -94,7 +96,9 @@ class Module:
         if parts[0] in self.commands:
             await self.on_command(parts[0], channel, who, text)
 
-    async def on_command(self, command: str, channel: Optional[str], who: Optional[str], text: str):
+    async def on_command(
+        self, command: str, channel: Optional[str], who: Optional[str], text: str
+    ):
         """
         Callback for when a message is prefixed with a known command.
         """
@@ -105,9 +109,11 @@ class Module:
 
         If True, the message will be passed on to the on_message handler; otherwise, false.
         """
-        return bool(msg.parameters) \
-                and msg.command == 'PRIVMSG' \
-                and msg.parameters[0] in self.config.channels
+        return (
+            bool(msg.parameters)
+            and msg.command == "PRIVMSG"
+            and msg.parameters[0] in self.config.channels
+        )
 
     @staticmethod
     def default_args():
@@ -122,5 +128,7 @@ def module_commands(*commands):
         class _Wrapped(cls):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, commands=commands, **kwargs)
+
         return _Wrapped
+
     return wrapper

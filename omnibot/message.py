@@ -2,7 +2,10 @@ class Message:
     """
     An adapter for messages from multiple possible servers.
     """
-    def __init__(self, server: 'Server', sender: str, target: str, message: str) -> None:
+
+    def __init__(
+        self, server: "Server", sender: str, target: str, message: str
+    ) -> None:
         self._server = server
         self._sender = sender
         self._target = target
