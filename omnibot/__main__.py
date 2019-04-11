@@ -5,6 +5,7 @@ import signal
 from omnibot import config_from_yaml, ServerManager
 
 log = logging.getLogger(__name__)
+manager = None
 
 
 def __reload_config(loop, filename: str, manager: ServerManager):
@@ -19,6 +20,7 @@ def __reload_config(loop, filename: str, manager: ServerManager):
 
 
 async def __main(loop, args):
+    global manager
     logging.basicConfig(level=logging.DEBUG)
     with open(args.config) as fp:
         config = config_from_yaml(fp.read())
@@ -39,5 +41,12 @@ args = parse_args()
 loop = asyncio.get_event_loop()
 try:
     loop.run_until_complete(__main(loop, args))
+except KeyboardInterrupt:
+    log.info("Caught ctrl-c, attempting graceful exit")
+    tasks = asyncio.gather(*asyncio.Task.all_tasks(loop=loop), return_exceptions=True)
+    tasks.add_done_callback(lambda _: loop.stop())
+    tasks.cancel()
+    loop.run_forever()
+    loop.run_until_complete(manager.shutdown())
 finally:
     loop.stop()

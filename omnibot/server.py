@@ -51,7 +51,9 @@ class Server:
         await self.load_modules()
         await self._conn.connect()
 
-    def disconnect(self) -> None:
+    async def disconnect(self) -> None:
+        log.debug("Disconnecting from %s", self.addr)
+        await self.unload_modules()
         self._connected = False
         self._conn.quit()
 
@@ -71,6 +73,7 @@ class Server:
         """
         Unloads, and then reloads all modules for this server.
         """
+        log.debug("Reloading modules")
         unload = []
         for module in self._modules.values():
             if module.name in self.config.modules:
@@ -91,16 +94,23 @@ class Server:
         """
         Loads all modules that have not yet been loaded for this server.
         """
+        log.debug("Loading modules")
         for config in self.config.modules.values():
             if config.name in self._modules:
                 continue
+            on_load = None
             try:
                 ctor = self._loader.load_module(config.name)
                 loaded = ctor(config, self)
-                await loaded.on_load()
+                on_load = self.loop.create_task(loaded.on_load())
+                await on_load
                 if self._connected:
                     await loaded.on_connect()
                 self._modules[config.name] = loaded
+            except KeyboardInterrupt:
+                if on_load is not None:
+                    on_load.cancel()
+                raise
             except:
                 log.exception("Could not load module %s", config.name)
                 continue
@@ -113,12 +123,14 @@ class Server:
 
         If explicitly zero modules are specified (i.e. an empty set), no modules are unloaded.
         """
+        log.debug("Unloading modules")
         if which is None:
             which = set(self._modules.keys())
         unloaded = []
         for module_name in which:
             self._loader.unload_module(module_name)
             unloaded += [self._modules.pop(module_name).on_unload()]
+
         await asyncio.gather(*unloaded)
 
     def match_channels(self):
@@ -155,7 +167,12 @@ class Server:
         """
         self.match_channels()
         futures = [module.on_connect() for module in self._modules.values()]
-        await asyncio.gather(*futures, loop=self.loop)
+        tasks = asyncio.gather(*futures, loop=self.loop)
+        try:
+            await tasks
+        except KeyboardInterrupt:
+            tasks.cancel()
+            raise
 
     async def on_kick(self, msg):
         """
@@ -167,8 +184,12 @@ class Server:
             who = None
             self._active_channels.remove(channel)
         futures = [module.on_kick(channel, who) for module in self._modules.values()]
+        tasks = asyncio.gather(*futures, loop=self.loop)
         try:
-            await asyncio.gather(*futures, loop=self.loop)
+            await tasks
+        except KeyboardInterrupt:
+            tasks.cancel()
+            raise
         except:
             log.exception("Error while handling kick callback")
 
@@ -185,8 +206,12 @@ class Server:
             who = None
             self._active_channels.remove(channel)
         futures = [module.on_part(channel, who) for module in self._modules.values()]
+        tasks = asyncio.gather(*futures, loop=self.loop)
         try:
-            await asyncio.gather(*futures, loop=self.loop)
+            await tasks
+        except KeyboardInterrupt:
+            tasks.cancel()
+            raise
         except:
             log.exception("Error while handling part callback")
 
@@ -203,8 +228,12 @@ class Server:
             who = None
             self._active_channels.add(channel)
         futures = [module.on_join(channel, who) for module in self._modules.values()]
+        tasks = asyncio.gather(*futures, loop=self.loop)
         try:
-            await asyncio.gather(*futures, loop=self.loop)
+            await tasks
+        except KeyboardInterrupt:
+            tasks.cancel()
+            raise
         except:
             log.exception("Error while handling join callback")
 
@@ -219,6 +248,8 @@ class Server:
         if channel not in self._active_channels:
             # private message to us
             channel = None
+        if msg.prefix is None:
+            return
         who = msg.prefix.nick
         if who == self.config.nick:
             who = None
@@ -228,7 +259,14 @@ class Server:
             for module in self._modules.values()
             if module.should_handle(msg)
         ]
-        await asyncio.gather(*futures, loop=self.loop)
+        tasks = asyncio.gather(*futures, loop=self.loop)
+        try:
+            await tasks
+        except KeyboardInterrupt:
+            tasks.cancel()
+            raise
+        except:
+            log.exception("Error handling channel message")
 
     def send_message(self, target: str, message: str) -> None:
         """
@@ -257,10 +295,13 @@ class ServerManager:
             log.info("Connecting to %s", server.addr)
             try:
                 await server.connect()
-                async with self._active_lock:
-                    self._active[server.addr] = server
+            except KeyboardInterrupt:
+                raise
             except:
                 log.exception("Could not connect to %s", server.addr)
+                return
+            async with self._active_lock:
+                self._active[server.addr] = server
 
         async with self._servers_lock:
             connect = set(self._servers.keys()) - set(self._active.keys())
@@ -275,7 +316,12 @@ class ServerManager:
                 self._servers[addr] = server
                 futures += [connect_one(server)]
             self._reconnect_servers.clear()
-        await asyncio.gather(*futures, loop=self._loop)
+        tasks = asyncio.gather(*futures, loop=self._loop)
+        try:
+            await tasks
+        except KeyboardInterrupt:
+            tasks.cancel()
+            raise
 
     async def _disconnect(self):
         """
@@ -289,7 +335,7 @@ class ServerManager:
             async with self._active_lock:
                 server = self._active.pop(addr)
             futures += [server.close_future]
-            server.disconnect()
+            futures += [server.disconnect()]
         await asyncio.gather(*futures, loop=self._loop)
 
     async def _server_futures(self):
@@ -305,6 +351,12 @@ class ServerManager:
                 futures, loop=self._loop, return_when=asyncio.FIRST_COMPLETED
             )
             self._reload_signal.clear()
+
+    async def shutdown(self):
+        log.info("Stopping omnibot")
+        async with self._servers_lock:
+            self._servers.clear()
+        await self._disconnect()
 
     async def reload(self, server_configs: Sequence[ServerConfig]):
         log.info("Reloading server configurations")
