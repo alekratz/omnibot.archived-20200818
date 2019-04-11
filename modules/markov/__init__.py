@@ -1,3 +1,1 @@
-from .markov import *
-
-ModuleClass = Markov
+from .bot import *
