@@ -1,24 +1,19 @@
+from contextlib import contextmanager
 import itertools
+import logging
 from pathlib import Path
-from typing import Tuple
+from typing import Optional
 from omnibot import Module
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
-from .models import Base, User, Word, Ngram
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.session import Session as OrmSession
+from sqlalchemy import create_engine, or_, and_
+from sqlalchemy_utils import database_exists, create_database
+from .models import Base, User, Word, Ngram, NgramChain
 
 
-Session = sessionmaker()
-
-
-def window(seq, n: int):
-    "Sliding window function stolen from Stackoverflow :^)"
-    it = iter(seq)
-    result = tuple(itertools.islice(it, n))
-    if len(result) == n:
-        yield result
-    for elem in it:
-        result = result[1:] + (elem,)
-        yield result
+Session: OrmSession = sessionmaker()
+log = logging.getLogger(__name__)
 
 
 def default_base_dir():
@@ -35,13 +30,14 @@ def default_base_dir():
 
 class Markov(Module):
     default_args = {
-        "dsn": "sqlite://" + str(default_base_dir() / "markov.db"),
+        "dsn": "sqlite:///" + str(default_base_dir() / "markov.db"),
         "order": 2,
         "reply_chance": 0.01,
     }
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        log.debug("configuration: %s", self.args)
         if Base.metadata.bind:
             log.warning(
                 "Base.metadata.bind already set; using that instead of loading a new engine"
@@ -50,16 +46,33 @@ class Markov(Module):
         else:
             self.__engine = create_engine(self.args["dsn"])
             Base.metadata.bind = self.engine
-            Session.configure(bind=self.engine)
+        Session.configure(bind=self.engine)
 
+    @property
     def engine(self):
         return self.__engine
 
-    def register(self, channel: str, name: str, line: str):
-        """
-        Handles registering a markov chain entry in the database.
-        """
-        words = line.split(" ")
+    @contextmanager
+    def session(self):
+        session = Session()
+        try:
+            yield session
+            session.commit()
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    async def on_load(self):
+        dsn = self.args["dsn"]
+        if not database_exists(dsn):
+            create_database(dsn)
+        Base.metadata.create_all(self.engine)
+
+    async def on_message(self, channel: Optional[str], who: Optional[str], text: str):
+        if channel is None or who is None:
+            return
 
 
 ModuleClass = Markov
