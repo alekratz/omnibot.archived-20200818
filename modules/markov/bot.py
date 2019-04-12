@@ -27,7 +27,7 @@ def default_base_dir():
 
 class Markov(Module):
     default_args = {
-        "path": str(default_base_dir() / "markov.pickle"),
+        "chainfile": "markov.pickle",
         "order": 2,
         "save_every": 300.0,
         "reply_chance": 0.01,
@@ -54,11 +54,15 @@ class Markov(Module):
     def save_every(self) -> float:
         return self.args["save_every"]
 
+    @property
+    def chainfile(self) -> Path:
+        return self.data_dir() / Path(self.args['chainfile'])
+
     async def on_load(self):
-        path = Path(self.args["path"])
+        path = self.chainfile
         log.debug("Loading markov chain file %s", path)
-        if not path.exists:
-            log.info("Markov chain file %s does not exist, it will be created")
+        if not path.exists():
+            log.info("Markov chain file %s does not exist, it will be created", path)
             return
         with open(path, "rb") as fp:
             self.chains = pickle.load(fp)
@@ -76,7 +80,7 @@ class Markov(Module):
         self.save(shutdown=True)
 
     def save(self, shutdown: bool = False):
-        path = Path(self.args["path"])
+        path = self.chainfile
         log.debug("Saving markov chain file %s", path)
         with open(path, "wb") as fp:
             pickle.dump(self.chains, fp)

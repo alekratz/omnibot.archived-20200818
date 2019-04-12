@@ -1,4 +1,5 @@
 from collections import ChainMap
+from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence
 
 
@@ -49,6 +50,24 @@ class Module:
     @property
     def commands(self) -> Sequence[str]:
         return self.__commands
+
+    def data_dir(self) -> Path:
+        "Creates and returns the path to this module's data directory."
+        mod_data = self.config.data
+        if mod_data.is_absolute():
+            data_dir = mod_data
+        else:
+            server_data = self.server.config.data
+            data_dir = server_data / mod_data
+        if data_dir.exists() and not data_dir.is_dir():
+            raise ModuleError("data directory for module %s already exists as a file: %s",
+                              self.name, data_dir)
+        try:
+            data_dir.mkdir(parents=True, exist_ok=True)
+        except Exception as ex:
+            raise ModuleError("could not create data directory for module %s at %s: %s",
+                              self.name, data_dir, str(ex))
+        return data_dir
 
     async def on_unload(self):
         """

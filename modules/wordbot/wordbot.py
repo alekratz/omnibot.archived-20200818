@@ -41,24 +41,12 @@ CREATE TABLE IF NOT EXISTS score (
 """
 
 
-def default_base_dir():
-    """
-    Gets the default base directory.
-
-    If the script is a file, then the base directory is given. Otherwise, `os.getcwd()` is given.
-    """
-    try:
-        return Path(__file__).parent
-    except:
-        return Path.cwd()
-
-
 class Wordbot(Module):
     default_args = {
-        "database_path": str(default_base_dir() / "wordbot.db"),
+        "database": "wordbot.db",
         "words_per_hour": 50,
         "hours_per_round": 5,
-        "wordlist_path": str(default_base_dir() / "words.txt"),
+        "wordlist": str(default_base_dir() / "words.txt"),
         "ignore": [],
     }
 
@@ -67,12 +55,20 @@ class Wordbot(Module):
         self._games = {}
         self._words = set()
 
+    @property
+    def database_path(self) -> Path:
+        return self.data_dir() / self.args['database']
+
+    @property
+    def wordlist_path(self) -> Path:
+        return self.data_dir() / self.args['wordlist']
+
     async def on_load(self):
         """
         Ensures the current database state and recreates the current state if necessary.
         """
         self._ensure_database()
-        with open(self.args["wordlist_path"]) as fp:
+        with open(self.wordlist_path) as fp:
             self._words = set(map(str.strip, fp))
         log.info("loaded %s words", len(self._words))
 
@@ -149,7 +145,7 @@ class Wordbot(Module):
         """
         Ensures that the database exists and the tables also exist.
         """
-        log.debug("Ensuring wordbot database (%s)", self.args["database_path"])
+        log.debug("Ensuring wordbot database (%s)", self.database_path)
         with self._db() as conn:
             conn.executescript(SQL)
 
@@ -157,7 +153,7 @@ class Wordbot(Module):
         """
         Creates a database connection.
         """
-        return sqlite3.connect(self.args["database_path"])
+        return sqlite3.connect(self.database_path)
 
     def restore_game(self, channel: str):
         """

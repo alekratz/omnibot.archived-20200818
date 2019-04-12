@@ -1,5 +1,6 @@
 from enum import Enum
 import logging
+from pathlib import Path
 from typing import Any, Mapping, Iterator, Sequence
 import yaml
 
@@ -20,11 +21,13 @@ class ModuleConfig:
         channels: Sequence[str] = None,
         args: Mapping[str, Any] = None,
         always_reload: bool = None,
+        data: str = None,
     ):
         self._name = name
         self._channels = set(channels or [])
         self._args = args or {}
         self._always_reload = always_reload or False
+        self._data = data or name
 
     @property
     def name(self):
@@ -41,6 +44,10 @@ class ModuleConfig:
     @property
     def always_reload(self) -> bool:
         return self._always_reload
+
+    @property
+    def data(self) -> Path:
+        return Path(self._data)
 
     def __getitem__(self, key: str) -> Any:
         return self.args[key]
@@ -66,6 +73,7 @@ class ServerConfig:
         nick: str,
         port: int = None,
         ssl: bool = None,
+        data: str = None,
         modules: Mapping[str, Any] = None,
         **kwargs
     ):
@@ -76,6 +84,7 @@ class ServerConfig:
         else:
             self._port = int(port)
         self._nick = nick
+        self._data = data or str(Path.cwd() / 'data')
         modules = modules or {}
         self._modules = {}
         for name, mod in modules.items():
@@ -85,19 +94,28 @@ class ServerConfig:
 
     @property
     def addr(self) -> str:
+        "The server's address to connect to."
         return self._addr
 
     @property
     def port(self) -> int:
+        "The port to connect to on the server."
         return self._port
 
     @property
     def ssl(self) -> bool:
+        "Whether to use SSL or not."
         return self._ssl
 
     @property
     def nick(self) -> str:
+        "The nickname for this bot to use."
         return self._nick
+
+    @property
+    def data(self) -> Path:
+        "The data directory that this bot will use."
+        return Path(self._data)
 
     @property
     def modules(self) -> Mapping[str, ModuleConfig]:
