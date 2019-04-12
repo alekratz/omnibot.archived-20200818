@@ -26,6 +26,5 @@ aforementioned issues page.
 * Install instructions
 * Development documentation
 * More bots
-    * Markov bot
-        * In-progress
     * Acro bot
+    * Unit conversion bot
