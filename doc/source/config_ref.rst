@@ -28,26 +28,31 @@ objects describing how to connect to the server. For example::
 
 Inside of server blocks, the following values can be set.
 
-   
-+---------------+------------------------------------------+--------+------------------------------+
-| Name          | Description                              | Type   | Default                      |
-+===============+==========================================+========+==============================+
-| ``address``   | The address of the server to connect to. | String | The key of the server object |
-|               |                                          |        | itself. In the first example,|
-|               |                                          |        | "irc.example.com" is used.   |
-+---------------+------------------------------------------+--------+------------------------------+
-| ``port``      | The port of the server to connect on.    | Int    | 6667 if ``ssl`` is false,    |
-|               |                                          |        | otherwise 6697.              |
-+---------------+------------------------------------------+--------+------------------------------+
-| ``ssl``       | Whether to connect using SSL or not.     | Bool   | ``false``                    |
-+---------------+------------------------------------------+--------+------------------------------+
-| ``nick``      | The nickname to use.                     | String | \*Required.                  |
-+---------------+------------------------------------------+--------+------------------------------+
-| ``data``      | The directory to store module data in.   | String | ``./data``                   |
-+---------------+------------------------------------------+--------+------------------------------+
-| ``modules``   | An object of module configurations for   | Object | ``{}`` (empty object)        |
-|               | the server to load (see below).          |        |                              |
-+---------------+------------------------------------------+--------+------------------------------+
+* ``address``
+    * **Type**: String
+    * **Description**: The address of the server to connect to.
+    * **Default**: The key of the server object itself. In the first example, ``"irc.example.com"`` is
+      used.
+* ``port``
+    * **Type**: Int
+    * **Description**: The port of the server to connect to.
+    * **Default**: 6697 if ``ssl`` is ``true``, else 6667.
+* ``ssl``
+    * **Type**: Bool
+    * **Description**: Whether to connect using SSL or not.
+    * **Default**: ``false``
+* ``nick``
+    * **Type**: String
+    * **Description**: The nickname to use on this server.
+    * **Default**: \*Required.
+* ``data``
+    * **Type**: String
+    * **Description**: The directory to store module data for this server in.
+    * **Default**: ``./data``
+* ``modules``
+    * **Type**: Object
+    * **Description**: An object of module configurations for the server to load (see below).
+    * **Default**: ``{}`` (empty object)
 
 
 Examples
@@ -64,22 +69,24 @@ modules are only ever reloaded if their configuration changes - otherwise, the m
 configuration remains unchanged.
 
 
-+-------------------+------------------------------------------+--------+--------------------------+
-| Name              | Description                              | Type   | Default                  |
-+===================+==========================================+========+==========================+
-| ``channels``      | The channels that this module will be    | Array  | ``[]`` (empty array)     |
-|                   | active on.                               |        |                          |
-+-------------------+------------------------------------------+--------+--------------------------+
-| ``always_reload`` | This causes the module to be reloaded    | Bool   | false                    |
-|                   | every time configuration is reloaded,    |        |                          |
-|                   | not just when the configuration changes. |        |                          |
-+-------------------+------------------------------------------+--------+--------------------------+
-| ``data``          | The directory to store this module's     | String | The name of the module.  |
-|                   | data in, if any.                         |        |                          |
-+-------------------+------------------------------------------+--------+--------------------------+
-| ``args``          | Named arguments that this module can use | Object | ``{}`` (empty object)    |
-|                   | to modify its behavior.                  |        |                          |
-+-------------------+------------------------------------------+--------+--------------------------+
+* ``channels``
+    * **Type**: Array
+    * **Description**: The channels that this module will be active on.
+    * **Default**: ``[]`` (empty array)
+* ``always_reload``
+    * **Type**: Bool
+    * **Description**: Whether to reload this module every time configuration is reloaded (``true``),
+                     or to only reload when this module's configuration is changed (``false``).
+    * **Default**: ``false``
+* ``data``
+    * **Type**: String
+    * **Description**: The data directory to store this module's data in, if any.
+    * **Default**: The name of the module.
+* ``args``
+    * **Type**: Object
+    * **Description**: Named arguments that this module can use to modify its behavior. Check the
+                     module's documentation for more inforation.
+    * **Default**: ``{}`` (empty object)
 
 
 Examples
