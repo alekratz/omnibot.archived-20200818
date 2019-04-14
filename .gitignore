@@ -2,8 +2,6 @@
 *.db
 
 # Config files
-*.yml
-*.yaml
 *.ucl
 !*.example.*
 
