@@ -5,30 +5,40 @@ from omnibot.config import *
 
 
 def test_empty_config():
-    cfg = config_from_yaml("")
+    cfg = config_from_ucl("")
     assert len(cfg) == 0
 
 
 def test_server_config():
-    cfg = config_from_yaml("""
-server:
-  irc1.example.com:
-    nick: test1
-  irc2:
-    address: irc2.example.com
-    nick: test2
-    port: 6668
-  irc3:
-    address: irc3.example.com
-    nick: test3
-    ssl: yes
-  irc4.example.com:
-    nick: test4
-    port: 6697
-  irc5.example.com:
-    nick: test5
-    port: 6687
-    ssl: yes""")
+    cfg = config_from_ucl("""
+server {
+    "irc1.example.com" {
+    	nick = "test1"
+    }
+
+    "irc2" {
+	address = "irc2.example.com"
+    	nick = "test2"
+    	port = 6668
+    }
+
+    "irc3" {
+	address = "irc3.example.com"
+    	nick = "test3"
+    	ssl = true
+    }
+
+    "irc4.example.com" {
+    	nick = "test4"
+    	port = 6697
+    }
+
+    "irc5.example.com" {
+    	nick = "test5"
+    	port = 6687
+    	ssl = true
+    }
+}""")
     assert len(cfg) == 5
 
     assert cfg[0].address == 'irc1.example.com'
@@ -63,18 +73,17 @@ server:
 
 
 def test_module_config():
-    cfg = config_from_yaml("""
-server:
-  irc.example.com:
-    nick: test
-    modules:
-      nickserv: {}
-      rtd:
-        channels:
-        - "#test1"
-        - "#test2"
-        args:
-          max_sides: 100""")
+    cfg = config_from_ucl("""
+server "irc.example.com" {
+    nick = "test"
+    modules {
+        nickserv {}
+        rtd {
+            channels = ["#test1", "#test2"]
+            args { max_sides = 100 }
+        }
+    }
+}""")
     assert len(cfg) == 1
     cfg = cfg[0]
     assert cfg.address == 'irc.example.com'

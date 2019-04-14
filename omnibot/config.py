@@ -2,13 +2,12 @@ from enum import Enum
 import logging
 from pathlib import Path
 from typing import Any, Mapping, Iterator, Sequence
-import yaml
 
 
 log = logging.getLogger(__name__)
 
 
-class InvalidConfigError(Exception):
+class ConfigError(Exception):
     """
     Indicates an invalid configuration
     """
@@ -135,8 +134,12 @@ class ServerConfig:
         return hash((self.address, self.port, self.ssl, list(self.modules.keys())))
 
 
-def config_from_yaml(text: str):
-    obj = yaml.load(text)
+def config_from_ucl(text: str):
+    import ucl
+    return config_from_obj(ucl.load(text))
+
+
+def config_from_obj(obj: Mapping[str, Any]):
     if not obj:
         return []
     return [ServerConfig(name=name, **c) for name, c in obj["server"].items()]

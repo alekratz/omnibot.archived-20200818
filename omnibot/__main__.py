@@ -1,8 +1,9 @@
 import argparse
 import asyncio
 import logging
+import pathlib
 import signal
-from omnibot import config_from_yaml, ServerManager
+from omnibot import config_from_ucl, ServerManager
 
 log = logging.getLogger(__name__)
 manager = None
@@ -11,9 +12,10 @@ manager = None
 def __reload_config(loop, filename: str, manager: ServerManager):
     log.info("Reloading configuration")
     try:
+        # TODO is there a better way to determine the filetype?
         with open(filename) as fp:
             contents = fp.read()
-        coro = manager.reload(config_from_yaml(contents))
+        coro = manager.reload(config_from_ucl(contents))
         asyncio.ensure_future(coro, loop=loop)
     except Exception:
         logging.exception("Could not reload configuration")
@@ -23,7 +25,7 @@ async def __main(loop, args):
     global manager
     logging.basicConfig(level=logging.DEBUG)
     with open(args.config) as fp:
-        config = config_from_yaml(fp.read())
+        config = config_from_ucl(fp.read())
     manager = ServerManager(config, loop=loop)
 
     loop.add_signal_handler(signal.SIGUSR1, __reload_config, loop, args.config, manager)
@@ -33,7 +35,7 @@ async def __main(loop, args):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run an IRC bot")
-    parser.add_argument("-c", "--config", metavar="CONFIG", default="omnibot.yml")
+    parser.add_argument("-c", "--config", metavar="CONFIG", default="omnibot.ucl")
     return parser.parse_args()
 
 
