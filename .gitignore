@@ -4,6 +4,8 @@
 # Config files
 *.yml
 *.yaml
+*.ucl
+!*.example.*
 
 # Default data directory
 data/

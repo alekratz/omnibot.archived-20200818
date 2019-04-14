@@ -1,0 +1,32 @@
+server "irc.example.com" {
+    # If you don't supply "address", the name for this server is used instead
+    #address = "irc.example.com"
+    port = 6697
+    ssl = true
+    nick = "omnibot"
+
+    modules {
+        nickserv args {
+            password = "secret"
+            email = "omnibot@omni.bot"
+        }
+        rtd {
+            channels = ["#idleville"]
+        }
+        fortune {
+            channels = ["#idleville"]
+            always_reload = true
+        }
+        linkbot {
+            channels = ["#idleville"]
+        }
+        wordbot {
+            channels = ["idleville"]
+            always_reload = true
+            args {
+                words_per_hour = 60
+                hours_per_round = 5
+            }
+        }
+    }
+}
