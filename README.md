@@ -28,3 +28,7 @@ aforementioned issues page.
 * More bots
     * Acro bot
     * Unit conversion bot
+* Move 'modules' directory to someplace inside of 'omnibot', and name it something like
+  'omnibot.contrib' like Django does
+* Do module imports using the python import system so external modules can be used as packages,
+  instead of looking for local `.py` files
