@@ -19,7 +19,7 @@ class Server:
         self._loader = loader
         self._loop = loop or asyncio.get_event_loop()
         self._conn = IrcProtocol(
-            [IrcServer(config.addr, config.port, config.ssl)],
+            [IrcServer(config.address, config.port, config.ssl)],
             config.nick,
             loop=self._loop,
         )
@@ -32,8 +32,8 @@ class Server:
         return self._config
 
     @property
-    def addr(self) -> str:
-        return self.config.addr
+    def address(self) -> str:
+        return self.config.address
 
     @property
     def port(self) -> int:
@@ -52,7 +52,7 @@ class Server:
         await self._conn.connect()
 
     async def disconnect(self) -> None:
-        log.debug("Disconnecting from %s", self.addr)
+        log.debug("Disconnecting from %s", self.address)
         await self.unload_modules()
         self._connected = False
         self._conn.quit()
@@ -62,7 +62,7 @@ class Server:
         Reloads a server based on a new configuration.
         """
         assert (
-            self.config.addr == config.addr
+            self.config.address == config.address
             and self.config.port == config.port
             and self.config.ssl == config.ssl
         ), "changing a connection must be done through the server manager"
@@ -279,10 +279,10 @@ class ServerManager:
     def __init__(self, server_configs: Sequence[ServerConfig], loop=None) -> None:
         self._loop = loop or asyncio.get_event_loop()
         # set up all servers from their configs
-        self._server_configs = {s.addr: s for s in server_configs}
+        self._server_configs = {s.address: s for s in server_configs}
         self._servers = {
-            addr: Server(ModuleLoader(["modules"]), cfg)
-            for addr, cfg in self._server_configs.items()
+            address: Server(ModuleLoader(["modules"]), cfg)
+            for address, cfg in self._server_configs.items()
         }
         self._servers_lock = asyncio.Lock()
         self._active = {}
@@ -292,28 +292,28 @@ class ServerManager:
 
     async def _connect(self):
         async def connect_one(server):
-            log.info("Connecting to %s", server.addr)
+            log.info("Connecting to %s", server.address)
             try:
                 await server.connect()
             except KeyboardInterrupt:
                 raise
             except:
-                log.exception("Could not connect to %s", server.addr)
+                log.exception("Could not connect to %s", server.address)
                 return
             async with self._active_lock:
-                self._active[server.addr] = server
+                self._active[server.address] = server
 
         async with self._servers_lock:
             connect = set(self._servers.keys()) - set(self._active.keys())
             futures = []
-            for addr in connect:
-                server = self._servers[addr]
+            for address in connect:
+                server = self._servers[address]
                 futures += [connect_one(server)]
-            for addr, server in self._reconnect_servers.items():
+            for address, server in self._reconnect_servers.items():
                 assert (
-                    addr not in self._active
+                    address not in self._active
                 ), "attempting to reconnect to an active server"
-                self._servers[addr] = server
+                self._servers[address] = server
                 futures += [connect_one(server)]
             self._reconnect_servers.clear()
         tasks = asyncio.gather(*futures, loop=self._loop)
@@ -330,10 +330,10 @@ class ServerManager:
         futures = []
         async with self._servers_lock:
             remove = set(self._active.keys()) - set(self._servers.keys())
-        for addr in remove:
-            log.info("Closing connection to %s", addr)
+        for address in remove:
+            log.info("Closing connection to %s", address)
             async with self._active_lock:
-                server = self._active.pop(addr)
+                server = self._active.pop(address)
             futures += [server.close_future]
             futures += [server.disconnect()]
         await asyncio.gather(*futures, loop=self._loop)
@@ -360,7 +360,7 @@ class ServerManager:
 
     async def reload(self, server_configs: Sequence[ServerConfig]):
         log.info("Reloading server configurations")
-        server_configs = {s.addr: s for s in server_configs}
+        server_configs = {s.address: s for s in server_configs}
         reload_futures = []
         async with self._servers_lock:
             current = set(self._server_configs.keys())
@@ -368,31 +368,31 @@ class ServerManager:
             added = new - current
             removed = current - new
             changed = current & new
-            for addr in added:
-                log.debug("Added server %s", addr)
-                self._servers[addr] = Server(
-                    ModuleLoader(["modules"]), server_configs[addr]
+            for address in added:
+                log.debug("Added server %s", address)
+                self._servers[address] = Server(
+                    ModuleLoader(["modules"]), server_configs[address]
                 )
-            for addr in removed:
-                log.debug("Removed server %s", addr)
-                self._servers.pop(addr)
-            for addr in changed:
-                prev = self._server_configs[addr]
-                newest = server_configs[addr]
+            for address in removed:
+                log.debug("Removed server %s", address)
+                self._servers.pop(address)
+            for address in changed:
+                prev = self._server_configs[address]
+                newest = server_configs[address]
                 # check if connection settings changed, and make a new connection if so
-                if (prev.addr, prev.port, prev.ssl) != (
-                    newest.addr,
+                if (prev.address, prev.port, prev.ssl) != (
+                    newest.address,
                     newest.port,
                     newest.ssl,
                 ):
-                    log.debug("Reconnecting to server %s", newest.addr)
-                    self._servers.pop(prev.addr)
-                    self._reconnect_servers[newest.addr] = Server(
+                    log.debug("Reconnecting to server %s", newest.address)
+                    self._servers.pop(prev.address)
+                    self._reconnect_servers[newest.address] = Server(
                         ModuleLoader(["modules"]), newest
                     )
                 else:
-                    log.debug("Reconfiguring server %s", newest.addr)
-                    reload_futures += [self._servers[addr].reload(server_configs[addr])]
+                    log.debug("Reconfiguring server %s", newest.address)
+                    reload_futures += [self._servers[address].reload(server_configs[address])]
             await asyncio.gather(*reload_futures, loop=self._loop)
             self._server_configs = server_configs
         self._reload_signal.set()

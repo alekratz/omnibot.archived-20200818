@@ -69,15 +69,16 @@ class ServerConfig:
     def __init__(
         self,
         *,
-        addr: str,
+        name: str,
         nick: str,
+        address: str = None,
         port: int = None,
         ssl: bool = None,
         data: str = None,
         modules: Mapping[str, Any] = None,
         **kwargs
     ):
-        self._addr = addr
+        self._address = address or name
         self._ssl = ssl or False
         if port is None:
             self._port = 6697 if self._ssl else 6667
@@ -90,12 +91,12 @@ class ServerConfig:
         for name, mod in modules.items():
             self._modules[name] = ModuleConfig(name=name, **mod)
         for k in kwargs.keys():
-            log.warning("Unused config value for server %s: %s", self._addr, k)
+            log.warning("Unused config value for server %s: %s", self._address, k)
 
     @property
-    def addr(self) -> str:
+    def address(self) -> str:
         "The server's address to connect to."
-        return self._addr
+        return self._address
 
     @property
     def port(self) -> int:
@@ -124,18 +125,18 @@ class ServerConfig:
     def __eq__(self, other: "ServerConfig") -> bool:
         return (
             isinstance(other, ServerConfig)
-            and self.addr == other.addr
+            and self.address == other.address
             and self.port == other.port
             and self.ssl == other.ssl
             and self.modules == other.modules
         )
 
     def __hash__(self) -> int:
-        return hash((self.addr, self.port, self.ssl, list(self.modules.keys())))
+        return hash((self.address, self.port, self.ssl, list(self.modules.keys())))
 
 
 def config_from_yaml(text: str):
     obj = yaml.load(text)
     if not obj:
         return []
-    return [ServerConfig(**c) for c in obj["servers"]]
+    return [ServerConfig(name=name, **c) for name, c in obj["server"].items()]
