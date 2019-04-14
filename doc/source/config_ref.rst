@@ -76,7 +76,7 @@ configuration remains unchanged.
 * ``always_reload``
     * **Type**: Bool
     * **Description**: Whether to reload this module every time configuration is reloaded (``true``),
-                     or to only reload when this module's configuration is changed (``false``).
+      or to only reload when this module's configuration is changed (``false``).
     * **Default**: ``false``
 * ``data``
     * **Type**: String
@@ -85,7 +85,7 @@ configuration remains unchanged.
 * ``args``
     * **Type**: Object
     * **Description**: Named arguments that this module can use to modify its behavior. Check the
-                     module's documentation for more inforation.
+      module's documentation for more inforation.
     * **Default**: ``{}`` (empty object)
 
 
