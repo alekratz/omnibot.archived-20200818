@@ -2,10 +2,12 @@ Omnibot
 =======
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
    quickstart
+   config_ref
+   module_ref
 
 
 Indices and tables
