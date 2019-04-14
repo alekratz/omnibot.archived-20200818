@@ -46,7 +46,7 @@ class Wordbot(Module):
         "database": "wordbot.db",
         "words_per_hour": 50,
         "hours_per_round": 5,
-        "wordlist": str(default_base_dir() / "words.txt"),
+        "wordlist": "words.txt",
         "ignore": [],
     }
 

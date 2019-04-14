@@ -13,18 +13,6 @@ from .chain import MarkovChain
 log = logging.getLogger(__name__)
 
 
-def default_base_dir():
-    """
-    Gets the default base directory.
-
-    If the script is a file, then the base directory is given. Otherwise, `Path.cwd()` is given.
-    """
-    try:
-        return Path(__file__).parent
-    except:
-        return Path.cwd()
-
-
 class Markov(Module):
     default_args = {
         "chainfile": "markov.pickle",
