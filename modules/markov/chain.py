@@ -110,7 +110,7 @@ class MarkovChain:
         for i, word in enumerate(words):
             if i != 0 and not NGRAM_BREAK.match(word) and not word.startswith(","):
                 sentence += " "
-            sentence += word
+            sentence += str(word)
         return sentence
 
     def train(self, text: str, order: int) -> None:

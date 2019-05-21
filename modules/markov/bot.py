@@ -17,7 +17,7 @@ class Markov(Module):
     default_args = {
         "chainfile": "markov.pickle",
         "order": 2,
-        "save_every": 300.0,
+        "save_every": 30.0 * 60.0,
         "reply_chance": 0.01,
     }
 
@@ -51,9 +51,9 @@ class Markov(Module):
         log.debug("Loading markov chain file %s", path)
         if not path.exists():
             log.info("Markov chain file %s does not exist, it will be created", path)
-            return
-        with open(path, "rb") as fp:
-            self.chains = pickle.load(fp)
+        else:
+            with open(path, "rb") as fp:
+                self.chains = pickle.load(fp)
         log.debug("Building allchains")
         self.all_chains = defaultdict(MarkovChain)
         for channel, chains in self.chains.items():
