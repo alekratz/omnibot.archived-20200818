@@ -33,7 +33,7 @@ setup(
 
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['pyyaml==5.2.1', 'pydle==0.9.0', 'aiohttp==3.5.4', 'async-irc==0.1.7'],
+    install_requires=['pyyaml==5.1.2', 'pydle==0.9.0', 'aiohttp==3.5.4', 'async-irc==0.1.7'],
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
 

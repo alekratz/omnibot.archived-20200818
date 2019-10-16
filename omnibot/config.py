@@ -135,8 +135,8 @@ class ServerConfig:
 
 
 def config_from_yaml(text: str):
-    import pyyaml
-    return config_from_obj(pyyaml.load(text))
+    import yaml
+    return config_from_obj(yaml.safe_load(text))
 
 
 def config_from_obj(obj: Mapping[str, Any]):
