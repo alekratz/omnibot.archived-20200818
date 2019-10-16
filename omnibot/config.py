@@ -134,9 +134,9 @@ class ServerConfig:
         return hash((self.address, self.port, self.ssl, list(self.modules.keys())))
 
 
-def config_from_ucl(text: str):
-    import ucl
-    return config_from_obj(ucl.load(text))
+def config_from_yaml(text: str):
+    import pyyaml
+    return config_from_obj(pyyaml.load(text))
 
 
 def config_from_obj(obj: Mapping[str, Any]):
