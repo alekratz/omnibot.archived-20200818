@@ -1,0 +1,48 @@
+# Connect to an example server
+
+server:
+  irc.example.com:
+    # If you don't supply "address", the name for this server is used instead
+    #address = "irc.example.com"
+    #
+    # If you do not specify a port, it is implied through the `ssl` setting
+    # below.  However, the `ssl` setting is *not* implied through the port
+    # setting - it is set to `false` unless you explicitly state otherwise.
+    #
+    # port = 6697
+    #
+    # Whether to use SSL or not.
+    ssl: true
+    # The nickname to use for this bot.
+    nick: omnibot
+
+    # Modules to load for this server.
+    modules:
+    
+      # Nickserv is provided as a built-in module.
+      #
+      # NOTE: these have only been tested with Anope.
+      #
+      # A module uses the key "args" for its own configuration.
+      nickserv:
+        args:
+          password: "secret"
+          email: "omnibot@omni.bot"
+      rtd:
+        channels: ["#idleville"]
+
+      fortune:
+        channels: ["#idleville"]
+        always_reload: true
+
+      linkbot:
+        channels: ["#idleville"]
+
+      # A fun game where points are awarded for the most words said from a randomly selected list
+      # every few hours.
+      wordbot:
+        channels: ["idleville"]
+        always_reload: true
+        args:
+          words_per_hour: 60
+          hours_per_round: 5
