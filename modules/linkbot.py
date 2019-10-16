@@ -84,18 +84,20 @@ class Linkbot(Module):
         try:
             log.debug("getting title for %s", url)
             async with aiohttp.ClientSession() as session:
+                async with session.head(url) as resp:
+                    await resp.text()
+                    headers = resp.headers
+                    status = resp.status
+                if status != 200:
+                    log.debug("invalid status code: %s", status)
+                    raise LinkbotError("{} error".format(status))
+                elif not fnmatch.fnmatch(headers['content-type'], 'text/*'):
+                    log.debug("invalid content-type: %s", headers['content-type'])
+                    return None
                 async with session.get(url) as resp:
                     text = await resp.text()
-                    status = resp.status
-                    headers = resp.headers
         except Exception as ex:
             log.debug("invalid URL: %s", ex)
-            return None
-        if status != 200:
-            log.debug("invalid status code: %s", status)
-            raise LinkbotError("{} error".format(status))
-        elif not fnmatch.fnmatch(headers['content-type'], 'text/*'):
-            log.debug("invalid content-type: %s", headers['content-type'])
             return None
         title_parser = HTMLTitleParser()
         title_parser.feed(text)
